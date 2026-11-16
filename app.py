@@ -1,4 +1,5 @@
 import streamlit as st
+import hmac
 import os
 import time
 import shutil
@@ -41,6 +42,32 @@ def read_bytes(path: str) -> bytes:
 
 st.set_page_config(page_title="資料傳輸助手", page_icon="📦", layout="centered")
 st.title("📦 資料傳輸助手")
+
+
+# --- 密碼檢查：密碼放在 Streamlit Secrets 的 password，不寫進程式碼 ---
+def expected_password():
+    try:
+        return str(st.secrets["password"])
+    except Exception:
+        return None
+
+
+if not st.session_state.get("authed"):
+    expected = expected_password()
+    if not expected:
+        st.error("尚未設定密碼。請在 Secrets 加上 password 後再使用。")
+        st.stop()
+    with st.form("login_form"):
+        entered = st.text_input("密碼：", type="password")
+        if st.form_submit_button("進入", type="primary"):
+            if hmac.compare_digest(entered.encode(), expected.encode()):
+                st.session_state["authed"] = True
+                st.rerun()
+            else:
+                time.sleep(1)  # 拖慢連續猜密碼
+                st.error("密碼錯誤。")
+    st.stop()
+
 st.caption(f"傳送的內容所有人都看得到，{EXPIRATION_HOURS} 小時後自動刪除。")
 
 tab_send, tab_inbox = st.tabs(["📤 傳送", "📥 接收"])
