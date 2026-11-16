@@ -1,0 +1,5 @@
+.venv/
+temp_data/
+xfer.py
+__pycache__/
+.DS_Store
